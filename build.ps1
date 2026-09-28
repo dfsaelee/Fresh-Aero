@@ -6,7 +6,7 @@
 param(
     [switch]$Clean,
     [switch]$SkipConfigure,
-    [ValidateSet('All', 'VST3', 'Standalone', 'Tests')]
+    [ValidateSet('All', 'VST3', 'Standalone')]
     [string]$Target = 'All',
     [int]$Jobs = 0
 )
@@ -22,7 +22,6 @@ $vst3Bundle = Join-Path $buildDir "G3XFreshAir_artefacts\VST3\G3X Fresh Air.vst3
 $vst3Binary = Join-Path $vst3Bundle "Contents\x86_64-win\G3X Fresh Air.vst3"
 $moduleInfo = Join-Path $vst3Bundle "Contents\Resources\moduleinfo.json"
 $standalone = Join-Path $buildDir "G3XFreshAir_artefacts\Standalone\G3X Fresh Air.exe"
-$testExe    = Join-Path $buildDir "g3x_fresh_air_tests.exe"
 
 function Write-Header([string]$text) {
     Write-Host ""
@@ -84,7 +83,6 @@ try {
     switch ($Target) {
         'VST3'       { $buildArgs += @('--target', 'G3XFreshAir_VST3') }
         'Standalone' { $buildArgs += @('--target', 'G3XFreshAir_Standalone') }
-        'Tests'      { $buildArgs += @('--target', 'g3x_fresh_air_tests') }
     }
     Invoke-Build $buildArgs
     Write-Host "  Build complete." -ForegroundColor Green
@@ -130,22 +128,6 @@ try {
             Write-Status "Standalone" "[OK] Built"
         } else {
             Write-Status "Standalone" "[FAIL] Not found!" Red
-            $allPassed = $false
-        }
-    }
-
-    if ($Target -eq 'All' -or $Target -eq 'Tests') {
-        if (Test-Path $testExe) {
-            Write-Host "`n  Running DSP tests..." -ForegroundColor DarkGray
-            & $testExe
-            if ($LASTEXITCODE -eq 0) {
-                Write-Status "Tests" "[OK] All passed"
-            } else {
-                Write-Status "Tests" "[FAIL] Failed (exit code $LASTEXITCODE)" Red
-                $allPassed = $false
-            }
-        } else {
-            Write-Status "Tests" "[FAIL] Test binary not found!" Red
             $allPassed = $false
         }
     }

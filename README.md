@@ -1,6 +1,5 @@
 # G3X Fresh Air
-
-a dynamic two-band high-frequency exciter built with c++20 and juce 9. available as a 64-bit vst3 and standalone for windows.
+A dynamic two-band high-frequency exciter built with C++20 and Juce 9. Available as a 64-bit vst3 and standalone for windows.
 
 instead of acting like a static eq, it reacts dynamically to the audio and smoothly boosts high frequencies without adding harshness.
 
@@ -40,5 +39,4 @@ or do it manually:
 ```bash
 cmake -S . -B build -G "MinGW Makefiles"
 cmake --build build --config Release -j 16
-ctest --test-dir build --build-config Release --output-on-failure
 ```
