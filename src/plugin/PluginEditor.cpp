@@ -78,9 +78,14 @@ G3XFreshAirEditor::G3XFreshAirEditor(G3XFreshAirAudioProcessor& processor)
   outputSlider_.setTitle("Output trim");
   outputSlider_.setDescription("Adjusts output level from minus twelve to plus three decibels");
   outputSlider_.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+  outputSlider_.setRotaryParameters(juce::MathConstants<float>::pi * 1.2F,
+    juce::MathConstants<float>::pi * 2.8F, true);
   outputSlider_.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 70, 26);
   outputSlider_.setDoubleClickReturnValue(true, 0.0);
   outputSlider_.setTextValueSuffix(" dB");
+  outputSlider_.setColour(juce::Slider::textBoxTextColourId, textColour);
+  outputSlider_.setColour(juce::Slider::textBoxBackgroundColourId, panel);
+  outputSlider_.setColour(juce::Slider::textBoxOutlineColourId, juce::Colours::transparentBlack);
   addAndMakeVisible(outputSlider_);
 
   linkButton_.setTitle("Link band dynamics");
@@ -92,13 +97,10 @@ G3XFreshAirEditor::G3XFreshAirEditor(G3XFreshAirAudioProcessor& processor)
 
   presetBox_.setTitle("Preset");
   presetBox_.setDescription("Selects starting values for Presence, Air and output trim");
-  presetBox_.addItem("Neutral", 1);
-  presetBox_.addItem("Vocal Presence", 2);
-  presetBox_.addItem("Vocal Air", 3);
-  presetBox_.addItem("Drum Detail", 4);
-  presetBox_.addItem("Acoustic Clarity", 5);
-  presetBox_.addItem("Mix Open", 6);
+  for (std::size_t i = 0; i < kPresets.size(); ++i)
+    presetBox_.addItem(kPresets[i].name, static_cast<int>(i + 1));
   presetBox_.setTextWhenNothingSelected("PRESETS");
+  presetBox_.setSelectedId(processor_.getCurrentProgram() + 1, juce::dontSendNotification);
   presetBox_.onChange = [this] { applyPreset(presetBox_.getSelectedId()); };
   addAndMakeVisible(presetBox_);
 
@@ -112,7 +114,15 @@ G3XFreshAirEditor::G3XFreshAirEditor(G3XFreshAirAudioProcessor& processor)
   startTimerHz(30);
 }
 
-G3XFreshAirEditor::~G3XFreshAirEditor() { setLookAndFeel(nullptr); }
+G3XFreshAirEditor::~G3XFreshAirEditor() {
+  stopTimer();
+  presenceAttachment_.reset();
+  airAttachment_.reset();
+  outputAttachment_.reset();
+  linkAttachment_.reset();
+  bypassAttachment_.reset();
+  setLookAndFeel(nullptr);
+}
 
 void G3XFreshAirEditor::configureMacro(juce::Slider& slider, const juce::String& name,
     const juce::String& description) {
@@ -191,15 +201,11 @@ void G3XFreshAirEditor::timerCallback() {
 }
 
 void G3XFreshAirEditor::applyPreset(int presetId) {
-  struct Preset { double presence, air, output; bool link; };
-  static constexpr Preset presets[]{
-    {0.0, 0.0, 0.0, false}, {38.0, 18.0, -1.0, false},
-    {25.0, 62.0, -2.0, true}, {52.0, 34.0, -1.5, false},
-    {42.0, 30.0, -1.0, true}, {28.0, 38.0, -1.5, true}};
-  if (presetId < 1 || presetId > 6) return;
-  const auto& preset = presets[presetId - 1];
-  presenceSlider_.setValue(preset.presence, juce::sendNotificationSync);
-  airSlider_.setValue(preset.air, juce::sendNotificationSync);
-  outputSlider_.setValue(preset.output, juce::sendNotificationSync);
-  linkButton_.setToggleState(preset.link, juce::sendNotificationSync);
+  if (presetId < 1 || presetId > static_cast<int>(kPresets.size())) return;
+  processor_.setCurrentProgram(presetId - 1);
+  const auto& preset = kPresets[static_cast<std::size_t>(presetId - 1)];
+  presenceSlider_.setValue(preset.presence, juce::dontSendNotification);
+  airSlider_.setValue(preset.air, juce::dontSendNotification);
+  outputSlider_.setValue(preset.outputTrimDb, juce::dontSendNotification);
+  linkButton_.setToggleState(preset.linkBands, juce::dontSendNotification);
 }
