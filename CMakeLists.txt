@@ -13,6 +13,7 @@ endif()
 add_library(g3x_fresh_air_dsp STATIC src/dsp/FreshAirProcessor.cpp)
 target_include_directories(g3x_fresh_air_dsp PUBLIC src)
 if(MSVC)
+  add_compile_options(/utf-8)
   target_compile_options(g3x_fresh_air_dsp PRIVATE /W4 /permissive-)
 else()
   target_compile_options(g3x_fresh_air_dsp PRIVATE -Wall -Wextra -Wpedantic)
@@ -39,7 +40,14 @@ if(G3X_BUILD_PLUGIN)
     src/plugin/PluginProcessor.cpp
     src/plugin/PluginProcessor.hpp
     src/plugin/PluginEditor.cpp
-    src/plugin/PluginEditor.hpp)
+    src/plugin/PluginEditor.hpp
+    src/plugin/AeroTheme.h
+    src/plugin/AeroPainters.cpp
+    src/plugin/AeroPainters.h
+    src/plugin/AeroLookAndFeel.cpp
+    src/plugin/AeroLookAndFeel.h
+    src/plugin/AeroScene.cpp
+    src/plugin/AeroScene.h)
   target_include_directories(G3XFreshAir PRIVATE src)
   target_compile_definitions(G3XFreshAir PUBLIC
     JUCE_WEB_BROWSER=0

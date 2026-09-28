@@ -1,74 +1,30 @@
 #include "plugin/PluginEditor.hpp"
 
 namespace {
-const auto background = juce::Colour{0xff0d1518};
-const auto panel = juce::Colour{0xff162328};
-const auto presenceColour = juce::Colour{0xffffbf69};
-const auto airColour = juce::Colour{0xff72e1f2};
-const auto textColour = juce::Colour{0xffedf7f5};
-const auto muted = juce::Colour{0xff82969b};
+
+float meterLevel(float gain) {
+  return juce::jlimit(0.0F, 1.0F,
+    juce::jmap(juce::Decibels::gainToDecibels(gain, -60.0F), -60.0F, 0.0F, 0.0F, 1.0F));
 }
 
-FreshAirLookAndFeel::FreshAirLookAndFeel() {
-  setColour(juce::ComboBox::backgroundColourId, juce::Colour{0xff203138});
-  setColour(juce::ComboBox::outlineColourId, juce::Colours::transparentBlack);
-  setColour(juce::ComboBox::textColourId, textColour);
-  setColour(juce::PopupMenu::backgroundColourId, panel);
-  setColour(juce::PopupMenu::textColourId, textColour);
-  setColour(juce::ToggleButton::textColourId, muted);
-  setColour(juce::ToggleButton::tickColourId, airColour);
-}
+} // namespace
 
-void FreshAirLookAndFeel::drawRotarySlider(juce::Graphics& graphics, int x, int y,
-    int width, int height, float position, float startAngle, float endAngle,
-    juce::Slider& slider) {
-  auto bounds = juce::Rectangle<float>(static_cast<float>(x), static_cast<float>(y),
-    static_cast<float>(width), static_cast<float>(height)).reduced(13.0F);
-  const auto radius = juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.5F;
-  const auto centre = bounds.getCentre();
-  const auto angle = startAngle + position * (endAngle - startAngle);
-  const auto colour = slider.getName() == "Presence" ? presenceColour : airColour;
-
-  juce::Path track;
-  track.addCentredArc(centre.x, centre.y, radius, radius, 0.0F, startAngle, endAngle, true);
-  graphics.setColour(juce::Colour{0xff2a3c43});
-  graphics.strokePath(track, juce::PathStrokeType(6.0F,
-    juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
-  juce::Path value;
-  value.addCentredArc(centre.x, centre.y, radius, radius, 0.0F, startAngle, angle, true);
-  graphics.setColour(colour);
-  graphics.strokePath(value, juce::PathStrokeType(6.0F,
-    juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
-
-  const auto knob = bounds.withSizeKeepingCentre(radius * 1.55F, radius * 1.55F);
-  graphics.setGradientFill(juce::ColourGradient{juce::Colour{0xff3c5057}, knob.getX(), knob.getY(),
-    juce::Colour{0xff141e22}, knob.getRight(), knob.getBottom(), false});
-  graphics.fillEllipse(knob);
-  graphics.setColour(juce::Colour{0xff536a72});
-  graphics.drawEllipse(knob, 1.5F);
-  juce::Path pointer;
-  pointer.addRoundedRectangle(-2.0F, -radius * 0.6F, 4.0F, radius * 0.24F, 2.0F);
-  pointer.applyTransform(juce::AffineTransform::rotation(angle).translated(centre.x, centre.y));
-  graphics.setColour(colour);
-  graphics.fillPath(pointer);
-}
-
-G3XFreshAirEditor::G3XFreshAirEditor(G3XFreshAirAudioProcessor& processor)
-  : AudioProcessorEditor(processor), processor_(processor) {
+G3XFreshAirEditor::G3XFreshAirEditor(G3XFreshAirAudioProcessor& audioProcessor)
+  : AudioProcessorEditor(audioProcessor), processor_(audioProcessor) {
   setLookAndFeel(&lookAndFeel_);
   setOpaque(true);
   setResizable(true, true);
   setResizeLimits(560, 400, 900, 680);
   setSize(680, 480);
 
-  titleLabel_.setText("G3X  /  FRESH AIR", juce::dontSendNotification);
-  titleLabel_.setColour(juce::Label::textColourId, textColour);
-  titleLabel_.setFont(juce::FontOptions{21.0F, juce::Font::bold});
+  titleLabel_.setComponentID("aero-title");
+  titleLabel_.setText("G3X / FRESH AIR", juce::dontSendNotification);
+  titleLabel_.setFont(aero::titleFont(uiScale_));
   titleLabel_.setJustificationType(juce::Justification::centred);
   addAndMakeVisible(titleLabel_);
+  subtitleLabel_.setComponentID("aero-subtitle");
   subtitleLabel_.setText("DYNAMIC PRESENCE + OPEN AIR", juce::dontSendNotification);
-  subtitleLabel_.setColour(juce::Label::textColourId, muted);
-  subtitleLabel_.setFont(juce::FontOptions{11.0F});
+  subtitleLabel_.setFont(aero::labelFont(uiScale_));
   subtitleLabel_.setJustificationType(juce::Justification::centred);
   addAndMakeVisible(subtitleLabel_);
 
@@ -83,9 +39,9 @@ G3XFreshAirEditor::G3XFreshAirEditor(G3XFreshAirAudioProcessor& processor)
   outputSlider_.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 70, 26);
   outputSlider_.setDoubleClickReturnValue(true, 0.0);
   outputSlider_.setTextValueSuffix(" dB");
-  outputSlider_.setColour(juce::Slider::textBoxTextColourId, textColour);
-  outputSlider_.setColour(juce::Slider::textBoxBackgroundColourId, panel);
-  outputSlider_.setColour(juce::Slider::textBoxOutlineColourId, juce::Colours::transparentBlack);
+  outputSlider_.setColour(juce::Slider::textBoxTextColourId, aero::darkBlue);
+  outputSlider_.setColour(juce::Slider::textBoxBackgroundColourId, aero::pillTop);
+  outputSlider_.setColour(juce::Slider::textBoxOutlineColourId, aero::pillEdge);
   addAndMakeVisible(outputSlider_);
 
   linkButton_.setTitle("Link band dynamics");
@@ -104,8 +60,8 @@ G3XFreshAirEditor::G3XFreshAirEditor(G3XFreshAirAudioProcessor& processor)
   presetBox_.onChange = [this] { applyPreset(presetBox_.getSelectedId()); };
   addAndMakeVisible(presetBox_);
 
-  auto markCustom = [this] { 
-    if (!isApplyingPreset_) presetBox_.setSelectedId(0, juce::dontSendNotification); 
+  const auto markCustom = [this] {
+    if (!isApplyingPreset_) presetBox_.setSelectedId(0, juce::dontSendNotification);
   };
   presenceSlider_.onValueChange = markCustom;
   airSlider_.onValueChange = markCustom;
@@ -119,6 +75,8 @@ G3XFreshAirEditor::G3XFreshAirEditor(G3XFreshAirAudioProcessor& processor)
     "outputTrimDb", outputSlider_);
   linkAttachment_ = std::make_unique<ButtonAttachment>(processor_.state, "linkBands", linkButton_);
   bypassAttachment_ = std::make_unique<ButtonAttachment>(processor_.state, "bypass", bypassButton_);
+  resized();
+  updateThemeState();
   startTimerHz(30);
 }
 
@@ -132,6 +90,12 @@ G3XFreshAirEditor::~G3XFreshAirEditor() {
   setLookAndFeel(nullptr);
 }
 
+void G3XFreshAirEditor::setReducedMotion(bool shouldReduceMotion) {
+  if (reducedMotion_ == shouldReduceMotion) return;
+  reducedMotion_ = shouldReduceMotion;
+  scene_.repaintDynamicRegions(*this, animationPhase_, animationPhase_);
+}
+
 void G3XFreshAirEditor::configureMacro(juce::Slider& slider, const juce::String& name,
     const juce::String& description) {
   slider.setName(name);
@@ -143,69 +107,133 @@ void G3XFreshAirEditor::configureMacro(juce::Slider& slider, const juce::String&
   slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 78, 28);
   slider.setDoubleClickReturnValue(true, 0.0);
   slider.setTextValueSuffix(" %");
-  slider.setColour(juce::Slider::textBoxTextColourId, textColour);
-  slider.setColour(juce::Slider::textBoxBackgroundColourId, panel);
-  slider.setColour(juce::Slider::textBoxOutlineColourId, juce::Colours::transparentBlack);
+  slider.setColour(juce::Slider::textBoxTextColourId, aero::darkBlue);
+  slider.setColour(juce::Slider::textBoxBackgroundColourId, aero::pillTop);
+  slider.setColour(juce::Slider::textBoxOutlineColourId, aero::pillEdge);
   addAndMakeVisible(slider);
 }
 
 void G3XFreshAirEditor::paint(juce::Graphics& graphics) {
-  graphics.fillAll(background);
-  const auto card = getLocalBounds().toFloat().reduced(18.0F);
-  graphics.setColour(panel);
-  graphics.fillRoundedRectangle(card, 18.0F);
-  graphics.setColour(juce::Colour{0xff294047});
-  graphics.drawRoundedRectangle(card, 18.0F, 1.0F);
+  const auto paintStarted = juce::Time::getMillisecondCounterHiRes();
+  scene_.drawBackground(graphics);
+  aero::drawGlassPanel(graphics, cardPath_, getLocalBounds().toFloat(), scene_.frostedImage());
+  aero::drawGlassTitleBar(graphics, titleBarBounds_, uiScale_);
+  drawBadge(graphics);
+  drawMeter(graphics);
+  recordPaintDuration(juce::Time::getMillisecondCounterHiRes() - paintStarted);
+}
 
-  auto meter = juce::Rectangle<float>{54.0F, getHeight() - 56.0F,
-    getWidth() - 108.0F, 10.0F};
-  graphics.setColour(juce::Colour{0xff0a1114});
-  graphics.fillRoundedRectangle(meter, 5.0F);
-  const auto peak = juce::jlimit(0.0F, 1.0F,
-    juce::jmap(juce::Decibels::gainToDecibels(displayedPeak_, -60.0F), -60.0F, 0.0F, 0.0F, 1.0F));
-  const auto rms = juce::jlimit(0.0F, 1.0F,
-    juce::jmap(juce::Decibels::gainToDecibels(displayedRms_, -60.0F), -60.0F, 0.0F, 0.0F, 1.0F));
-  auto rmsFill = meter.reduced(2.0F);
-  rmsFill.setWidth(rmsFill.getWidth() * rms);
-  graphics.setColour(airColour.withAlpha(0.55F));
-  graphics.fillRoundedRectangle(rmsFill, 3.0F);
-  graphics.setColour(processor_.outputClipped() ? juce::Colour{0xffff6b6b} : textColour);
-  graphics.fillRect(meter.getX() + meter.getWidth() * peak - 1.0F, meter.getY(), 2.0F, meter.getHeight());
-  graphics.setFont(juce::FontOptions{10.0F, juce::Font::bold});
-  graphics.drawText("OUTPUT  RMS / PEAK  ·  CLICK TO RESET CLIP",
-    meter.withY(meter.getY() - 18.0F).withHeight(14.0F), juce::Justification::centred);
+void G3XFreshAirEditor::drawBadge(juce::Graphics& graphics) const {
+  const auto dotRadius = aero::scaled(3.5F, uiScale_);
+  aero::drawStatusLight(graphics, {badgeBounds_.getX() + dotRadius, badgeBounds_.getCentreY()}, true,
+    aero::limeGlow, uiScale_);
+  graphics.setFont(aero::labelFont(uiScale_));
+  const auto textBounds = badgeBounds_.toNearestInt().withTrimmedLeft(juce::roundToInt(dotRadius * 2.0F));
+  graphics.setColour(aero::textShadow);
+  graphics.drawFittedText("FRESH AIR", textBounds.translated(1, 1), juce::Justification::centred, 1);
+  graphics.setColour(aero::textPrimary);
+  graphics.drawFittedText("FRESH AIR", textBounds, juce::Justification::centred, 1);
+}
+
+void G3XFreshAirEditor::drawMeter(juce::Graphics& graphics) const {
+  aero::drawGlassTube(graphics, meterBounds_.toFloat(), meterLevel(displayedRms_), processor_.outputClipped(), uiScale_);
+  const auto peakX = static_cast<float>(meterBounds_.getX()) + static_cast<float>(meterBounds_.getWidth()) * meterLevel(displayedPeak_);
+  graphics.setColour(aero::textPrimary.withAlpha(0.88F));
+  graphics.fillRect(peakX - 1.0F, static_cast<float>(meterBounds_.getY()), 2.0F,
+    static_cast<float>(meterBounds_.getHeight()));
+  aero::drawStatusLight(graphics, {static_cast<float>(meterBounds_.getRight()) + aero::scaled(13.0F, uiScale_),
+    static_cast<float>(meterBounds_.getCentreY())}, processor_.outputClipped(), aero::clipCoral, uiScale_);
+  aero::drawLabelWithBacking(graphics, "OUTPUT  RMS / PEAK | CLICK TO RESET CLIP",
+    meterBounds_.withY(meterBounds_.getY() - juce::roundToInt(aero::scaled(18.0F, uiScale_)))
+      .withHeight(juce::roundToInt(aero::scaled(14.0F, uiScale_))),
+    juce::Justification::centred, aero::labelFont(uiScale_), true);
 }
 
 void G3XFreshAirEditor::resized() {
-  auto area = getLocalBounds().reduced(34);
-  titleLabel_.setBounds(area.removeFromTop(30));
-  subtitleLabel_.setBounds(area.removeFromTop(20));
-  area.removeFromTop(4);
-  presetBox_.setBounds(area.removeFromTop(34).withSizeKeepingCentre(220, 34));
-  area.removeFromTop(8);
-  auto controls = area.removeFromTop(juce::jmax(190, area.getHeight() - 88));
+  uiScale_ = aero::uiScaleForWidth(getWidth());
+  cardBounds_ = getLocalBounds().toFloat().reduced(aero::scaled(18.0F, uiScale_));
+  cardPath_.clear();
+  cardPath_.addRoundedRectangle(cardBounds_, aero::scaled(aero::cardRadius, uiScale_));
+  titleBarBounds_ = cardBounds_.reduced(aero::scaled(9.0F, uiScale_));
+  titleBarBounds_.setHeight(aero::scaled(62.0F, uiScale_));
+  badgeBounds_ = {cardBounds_.getRight() - aero::scaled(104.0F, uiScale_), cardBounds_.getY() + aero::scaled(20.0F, uiScale_),
+    aero::scaled(82.0F, uiScale_), aero::scaled(20.0F, uiScale_)};
+
+  auto area = getLocalBounds().reduced(juce::roundToInt(aero::scaled(34.0F, uiScale_)));
+  titleLabel_.setFont(aero::titleFont(uiScale_));
+  titleLabel_.setBounds(area.removeFromTop(juce::roundToInt(aero::scaled(30.0F, uiScale_))));
+  subtitleLabel_.setFont(aero::labelFont(uiScale_));
+  subtitleLabel_.setBounds(area.removeFromTop(juce::roundToInt(aero::scaled(20.0F, uiScale_))));
+  area.removeFromTop(juce::roundToInt(aero::scaled(4.0F, uiScale_)));
+  presetBox_.setBounds(area.removeFromTop(juce::roundToInt(aero::scaled(34.0F, uiScale_)))
+    .withSizeKeepingCentre(juce::roundToInt(aero::scaled(220.0F, uiScale_)), juce::roundToInt(aero::scaled(34.0F, uiScale_))));
+  area.removeFromTop(juce::roundToInt(aero::scaled(8.0F, uiScale_)));
+
+  auto footer = area.removeFromBottom(juce::roundToInt(aero::scaled(70.0F, uiScale_)));
+  auto controls = area;
   const auto third = controls.getWidth() / 3;
-  presenceSlider_.setBounds(controls.removeFromLeft(third).reduced(8));
-  outputSlider_.setBounds(controls.removeFromLeft(third).reduced(38, 34));
-  airSlider_.setBounds(controls.reduced(8));
-  auto buttons = area.removeFromTop(36).withSizeKeepingCentre(220, 32);
-  linkButton_.setBounds(buttons.removeFromLeft(100));
-  buttons.removeFromLeft(20);
+  presenceSlider_.setBounds(controls.removeFromLeft(third).reduced(juce::roundToInt(aero::scaled(8.0F, uiScale_))));
+  outputSlider_.setBounds(controls.removeFromLeft(third).reduced(juce::roundToInt(aero::scaled(38.0F, uiScale_)),
+    juce::roundToInt(aero::scaled(22.0F, uiScale_))));
+  airSlider_.setBounds(controls.reduced(juce::roundToInt(aero::scaled(8.0F, uiScale_))));
+
+  auto buttons = footer.removeFromTop(juce::roundToInt(aero::scaled(32.0F, uiScale_)))
+    .withSizeKeepingCentre(juce::roundToInt(aero::scaled(220.0F, uiScale_)), juce::roundToInt(aero::scaled(32.0F, uiScale_)));
+  linkButton_.setBounds(buttons.removeFromLeft(juce::roundToInt(aero::scaled(100.0F, uiScale_))));
+  buttons.removeFromLeft(juce::roundToInt(aero::scaled(20.0F, uiScale_)));
   bypassButton_.setBounds(buttons);
+  meterBounds_ = {juce::roundToInt(cardBounds_.getX() + aero::scaled(36.0F, uiScale_)),
+    footer.getY() + juce::roundToInt(aero::scaled(18.0F, uiScale_)),
+    juce::roundToInt(cardBounds_.getWidth() - aero::scaled(72.0F, uiScale_)), juce::roundToInt(aero::scaled(10.0F, uiScale_))};
+  meterHitBounds_ = meterBounds_.expanded(juce::roundToInt(aero::scaled(14.0F, uiScale_)),
+    juce::roundToInt(aero::scaled(22.0F, uiScale_)));
+
+  scene_.rebuild(getLocalBounds());
+  scene_.logContrastForLabel("title", titleLabel_.getBounds());
+  scene_.logContrastForLabel("subtitle", subtitleLabel_.getBounds());
+  scene_.logContrastForLabel("meter", meterBounds_.withY(meterBounds_.getY() - juce::roundToInt(aero::scaled(18.0F, uiScale_))));
 }
 
 void G3XFreshAirEditor::mouseDown(const juce::MouseEvent& event) {
-  const auto meterZone = juce::Rectangle<int>{40, getHeight() - 84, getWidth() - 80, 56};
-  if (meterZone.contains(event.getPosition())) {
+  if (meterHitBounds_.contains(event.getPosition())) {
     processor_.clearClipIndicator();
-    repaint();
+    repaint(meterHitBounds_);
   }
 }
 
+void G3XFreshAirEditor::updateThemeState() {
+  const auto bypassed = bypassButton_.getToggleState();
+  if (lastBypassed_ == bypassed) return;
+  lastBypassed_ = bypassed;
+  lookAndFeel_.setBypassed(bypassed);
+  presenceSlider_.repaint();
+  airSlider_.repaint();
+  outputSlider_.repaint();
+}
+
 void G3XFreshAirEditor::timerCallback() {
+  if (!isShowing()) return;
+  updateThemeState();
   displayedPeak_ = juce::jmax(processor_.outputPeak(), displayedPeak_ * 0.88F);
   displayedRms_ = juce::jmax(processor_.outputRms(), displayedRms_ * 0.94F);
-  repaint();
+  repaint(meterHitBounds_);
+}
+
+void G3XFreshAirEditor::recordPaintDuration(double elapsedMilliseconds) {
+#if JUCE_DEBUG
+  paintTotalMilliseconds_ += elapsedMilliseconds;
+  worstPaintMilliseconds_ = juce::jmax(worstPaintMilliseconds_, elapsedMilliseconds);
+  if (++paintSampleCount_ < 120) return;
+  const auto average = paintTotalMilliseconds_ / static_cast<double>(paintSampleCount_);
+  if (average > 2.0 || worstPaintMilliseconds_ > 8.0)
+    DBG("Aero paint budget exceeded: avg=" + juce::String(average, 2) + "ms worst="
+      + juce::String(worstPaintMilliseconds_, 2) + "ms");
+  paintTotalMilliseconds_ = 0.0;
+  worstPaintMilliseconds_ = 0.0;
+  paintSampleCount_ = 0;
+#else
+  juce::ignoreUnused(elapsedMilliseconds);
+#endif
 }
 
 void G3XFreshAirEditor::applyPreset(int presetId) {
