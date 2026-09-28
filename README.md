@@ -44,14 +44,30 @@ The team has successfully compiled the final release build.
 
 ## Building from Source
 
-To build the project yourself, you will need **CMake** and a compatible C++ compiler (like MSVC or MinGW-w64 GCC 16+). The build process will automatically fetch the required JUCE 9.0.1 framework.
+This project was successfully built and tested on Windows using a specific MinGW-w64 GCC toolchain to ensure full static linking and zero external DLL dependencies.
+
+### Required Tools
+- **Compiler:** [MinGW-w64 GCC 16.2.0 (UCRT, POSIX threads, SEH)](https://github.com/brechtsanders/winlibs_mingw) from winlibs.
+- **Build System:** **CMake 4.4+**
+- **Framework:** **JUCE 9.0.1** (automatically downloaded via `FetchContent` during the build).
+
+### Build Script (Recommended)
+You can use the included `build.ps1` script to automate the entire process. It ensures the environment paths are correct, applies necessary JUCE MinGW compatibility patches, configures CMake, compiles the code across multiple cores, runs DSP tests, and validates that no dynamic MinGW DLLs leaked into the final `.vst3`.
+
+```powershell
+# Open PowerShell and run:
+.\build.ps1 -Clean -Target All -Jobs 16
+```
+
+### Manual CMake Build
+If you prefer to build manually, ensure your MinGW `bin` directory is in your `PATH` and run:
 
 ```bash
 # Generate the build environment
-cmake -S . -B build
+cmake -S . -B build -G "MinGW Makefiles"
 
 # Compile the Release target
-cmake --build build --config Release
+cmake --build build --config Release -j 16
 
 # Run the DSP Unit Tests
 ctest --test-dir build --build-config Release --output-on-failure
