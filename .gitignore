@@ -15,3 +15,7 @@ test_*.exe
 test_*.cmake
 tools/
 
+# Local benchmark helper; retained locally but not part of the plugin source.
+benchmark_debug.cpp
+benchmark_debug.exe
+

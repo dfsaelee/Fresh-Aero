@@ -1,53 +1,44 @@
 # G3X Fresh Air
 
-A dynamic two-band high-frequency exciter that adds clarity, articulation, and brilliance to audio signals. Built with C++20 and JUCE 9 for Windows (VST3 & Standalone).
+a dynamic two-band high-frequency exciter built with c++20 and juce 9. available as a 64-bit vst3 and standalone for windows.
 
-## What It Does
-Instead of a static EQ, Fresh Air reacts dynamically to your audio, boosting high frequencies smoothly without introducing harshness.
-- **Mid Air:** Focuses on 3.2 kHz – 5 kHz to bring vocals forward and add definition.
-- **High Air:** Focuses on 8.5 kHz – 11 kHz to add openness and brilliance.
+instead of acting like a static eq, it reacts dynamically to the audio and smoothly boosts high frequencies without adding harshness.
 
-## Features
-- **Dynamic Processing:** Built-in envelope followers smoothly duck harsh transients.
-- **Link Band Dynamics:** Links the dynamic reduction of both bands to preserve your EQ balance.
-- **Output Trim:** Compensate for volume boosts (-12 dB to +3 dB).
-- **Hardened DSP:** Allocation-free, thread-safe, and highly optimized processing.
+the "mid air" band focuses on 3.2 kHz to 5 kHz to bring vocals forward.
+the "high air" band focuses on 8.5 kHz to 11 kHz to add openness.
 
-## Performance (CPU Benchmark)
-The DSP is heavily optimized. Processing a stereo track at 48kHz uses approximately **1.36% of a single CPU core**.
+### features
+- dynamic envelope followers that duck harsh transients
+- link button to keep the eq balance proportional when it compresses
+- output trim from -12 db to +3 db to compensate for volume bumps
+- allocation-free and thread-safe dsp 
 
-## Presets (Modes)
-Comes with factory presets that set optimal starting points for different instruments. *Note: Moving a knob after loading a preset will automatically switch it to 'Custom'.*
-- **Neutral:** Transparent bypass.
-- **Vocal Presence:** Pushes the Mid Air band to bring vocals forward.
-- **Vocal Air:** Focuses heavily on extreme high frequencies for breathiness.
-- **Drum Detail:** Aggressive Mid Air for snare crack, paired with High Air for cymbals.
-- **Acoustic Clarity:** Balanced enhancement for acoustic guitars with Linked dynamics.
-- **Mix Open:** Gentle, linked enhancement for a master bus.
+dsp performance is pretty solid. processing a stereo track at 48kHz takes about 1.36% of a single cpu core.
 
-## Installation (Windows x64)
-1. Locate the compiled `G3X Fresh Air.vst3` bundle in `build\G3XFreshAir_artefacts\VST3\`.
-2. Copy it into your system VST3 directory: `C:\Program Files\Common Files\VST3`
-3. Rescan plugins in your DAW.
+### presets
+it comes with a few starting points. if you move a knob after loading one, it will automatically switch to "custom".
 
-## Building from Source
-This project uses **MinGW-w64 GCC 16.2.0** and **CMake 4.4+**.
+- neutral: transparent bypass
+- vocal presence: pushes the mid air band for vocals
+- vocal air: focuses on extreme high frequencies for breathiness
+- drum detail: aggressive mid air for snares, high air for cymbals
+- acoustic clarity: balanced enhancement with linked dynamics
+- mix open: gentle linked enhancement for the master bus
 
-**Build Script (Recommended)**
+### installation
+the compiled bundle is in `build\G3XFreshAir_artefacts\VST3\`. just copy the `G3X Fresh Air.vst3` folder into `C:\Program Files\Common Files\VST3` and rescan your daw.
+
+### compiling
+this uses mingw-w64 gcc 16.2.0 and cmake 4.4+.
+
+you can just run the included script in powershell:
 ```powershell
 .\build.ps1 -Clean -Target All -Jobs 16
 ```
 
-### Manual CMake Build
-If you prefer to build manually, ensure your MinGW `bin` directory is in your `PATH` and run:
-
+or do it manually:
 ```bash
-# Generate the build environment
 cmake -S . -B build -G "MinGW Makefiles"
-
-# Compile the Release target
 cmake --build build --config Release -j 16
-
-# Run the DSP Unit Tests
 ctest --test-dir build --build-config Release --output-on-failure
 ```
