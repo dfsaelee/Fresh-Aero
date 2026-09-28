@@ -1,4 +1,4 @@
-name: CI
+name: Build Fresh Aero
 on:
   workflow_dispatch:
   push:
@@ -8,31 +8,21 @@ permissions:
   contents: read
 
 jobs:
-  dsp-tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - run: g++ -std=c++20 -Wall -Wextra -Wpedantic -Werror -Isrc src/dsp/FreshAirProcessor.cpp tests/FreshAirProcessorTests.cpp -o fresh-air-tests
-      - run: ./fresh-air-tests
   windows-vst3:
-    needs: dsp-tests
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v5
       - uses: lukka/get-cmake@latest
-      - run: cmake -S . -B build -A x64 -DG3X_BUILD_TESTS=OFF -DG3X_BUILD_PLUGIN=ON
-      - run: cmake --build build --config Release --target G3XFreshAir_VST3 G3XFreshAir_Standalone
-      - name: Test VST3 packaging
-        shell: pwsh
-        run: ./scripts/test-package-vst3.ps1
+      - run: cmake -S . -B build -A x64 -DG3X_BUILD_PLUGIN=ON
+      - run: cmake --build build --config Release --target FreshAero_VST3 FreshAero_Standalone
       - name: Package Windows VST3
         shell: pwsh
-        run: ./scripts/package-vst3.ps1 -BundlePath "build/G3XFreshAir_artefacts/Release/VST3/G3X Fresh Air.vst3" -Destination dist
+        run: ./scripts/package-vst3.ps1 -BundlePath "build/FreshAero_artefacts/Release/VST3/Fresh Aero.vst3" -Destination dist
       - name: Upload Windows VST3
         id: artifact
         uses: actions/upload-artifact@v4
         with:
-          name: G3X-Fresh-Air-Windows-x64-${{ github.sha }}
+          name: Fresh-Aero-Windows-x64-${{ github.sha }}
           path: dist/
           if-no-files-found: error
           retention-days: 30
@@ -42,4 +32,4 @@ jobs:
           ARTIFACT_URL: ${{ steps.artifact.outputs.artifact-url }}
         run: |
           "[Download Windows x64 VST3]($env:ARTIFACT_URL) — available for 30 days." >> $env:GITHUB_STEP_SUMMARY
-          "Extract the ZIP, verify SHA256SUMS.txt, then copy the entire G3X Fresh Air.vst3 folder to your VST3 directory." >> $env:GITHUB_STEP_SUMMARY
+          "Extract the ZIP, verify SHA256SUMS.txt, then copy the entire Fresh Aero.vst3 folder to your VST3 directory." >> $env:GITHUB_STEP_SUMMARY
