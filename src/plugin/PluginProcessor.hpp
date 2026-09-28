@@ -3,7 +3,7 @@
 #include <array>
 #include <atomic>
 #include <juce_audio_processors/juce_audio_processors.h>
-#include "dsp/FreshAirProcessor.hpp"
+#include "dsp/FreshAeroProcessor.hpp"
 
 struct PresetInfo {
   const char* name;
@@ -22,10 +22,10 @@ inline constexpr std::array<PresetInfo, 6> kPresets{{
   {"Mix Open", 28.0f, 38.0f, -1.5f, true}
 }};
 
-class G3XFreshAirAudioProcessor final : public juce::AudioProcessor {
+class FreshAeroAudioProcessor final : public juce::AudioProcessor {
 public:
-  G3XFreshAirAudioProcessor();
-  ~G3XFreshAirAudioProcessor() override = default;
+  FreshAeroAudioProcessor();
+  ~FreshAeroAudioProcessor() override = default;
 
   static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
   void prepareToPlay(double sampleRate, int samplesPerBlock) override;
@@ -34,7 +34,7 @@ public:
   void processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&) override;
   juce::AudioProcessorEditor* createEditor() override;
   bool hasEditor() const override { return true; }
-  const juce::String getName() const override { return "G3X Fresh Air"; }
+  const juce::String getName() const override { return "Fresh Aero"; }
   double getTailLengthSeconds() const override { return 0.0; }
   bool acceptsMidi() const override { return false; }
   bool producesMidi() const override { return false; }
@@ -56,7 +56,7 @@ private:
   void updateParameters() noexcept;
   void updateMeters(const juce::AudioBuffer<float>& buffer) noexcept;
 
-  g3x::FreshAirProcessor dsp_;
+  g3x::FreshAeroProcessor dsp_;
   std::atomic<float>* presenceParam_{nullptr};
   std::atomic<float>* airParam_{nullptr};
   std::atomic<float>* linkBandsParam_{nullptr};

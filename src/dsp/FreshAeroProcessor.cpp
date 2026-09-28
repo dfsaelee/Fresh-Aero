@@ -1,4 +1,4 @@
-#include "dsp/FreshAirProcessor.hpp"
+#include "dsp/FreshAeroProcessor.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -25,7 +25,7 @@ AirCurve mapAirCurve(double amount) noexcept {
   return {8500.0 + 2500.0 * value, 10.0 * std::pow(value, 1.55), 0.72};
 }
 
-void FreshAirProcessor::prepare(double sampleRate, std::size_t channels, double rampSeconds) {
+void FreshAeroProcessor::prepare(double sampleRate, std::size_t channels, double rampSeconds) {
   sampleRate_ = std::isfinite(sampleRate) ? std::clamp(sampleRate, 8000.0, 768000.0) : 44100.0;
   const auto ramp = std::isfinite(rampSeconds) ? std::clamp(rampSeconds, 0.0, 1.0) : 0.02;
   rampSamples_ = std::max<std::size_t>(1, static_cast<std::size_t>(sampleRate_ * ramp));
@@ -50,7 +50,7 @@ void FreshAirProcessor::prepare(double sampleRate, std::size_t channels, double 
   outputClipped_.store(false, std::memory_order_relaxed);
 }
 
-void FreshAirProcessor::reset() noexcept {
+void FreshAeroProcessor::reset() noexcept {
   for (auto& state : states_) state = {};
   presenceEnvelope_ = 0.0;
   airEnvelope_ = 0.0;
@@ -78,7 +78,7 @@ void FreshAirProcessor::reset() noexcept {
   outputClipped_.store(false, std::memory_order_relaxed);
 }
 
-void FreshAirProcessor::setPresence(double amount) noexcept {
+void FreshAeroProcessor::setPresence(double amount) noexcept {
   const auto clamped = std::isfinite(amount) ? std::clamp(amount, 0.0, 1.0) : 0.0;
   targetPresence_.store(clamped, std::memory_order_release);
   if (rampSamples_ <= 1) {
@@ -89,7 +89,7 @@ void FreshAirProcessor::setPresence(double amount) noexcept {
   }
 }
 
-void FreshAirProcessor::setAir(double amount) noexcept {
+void FreshAeroProcessor::setAir(double amount) noexcept {
   const auto clamped = std::isfinite(amount) ? std::clamp(amount, 0.0, 1.0) : 0.0;
   targetAir_.store(clamped, std::memory_order_release);
   if (rampSamples_ <= 1) {
@@ -100,7 +100,7 @@ void FreshAirProcessor::setAir(double amount) noexcept {
   }
 }
 
-void FreshAirProcessor::setOutputTrimDb(double decibels) noexcept {
+void FreshAeroProcessor::setOutputTrimDb(double decibels) noexcept {
   const auto clamped = std::isfinite(decibels) ? std::clamp(decibels, -12.0, 3.0) : 0.0;
   targetOutputTrimDb_.store(clamped, std::memory_order_release);
   if (rampSamples_ <= 1) {
@@ -111,11 +111,11 @@ void FreshAirProcessor::setOutputTrimDb(double decibels) noexcept {
   }
 }
 
-void FreshAirProcessor::setLinkBands(bool linked) noexcept {
+void FreshAeroProcessor::setLinkBands(bool linked) noexcept {
   linkBands_.store(linked, std::memory_order_release);
 }
 
-void FreshAirProcessor::setBypass(bool bypassed) noexcept {
+void FreshAeroProcessor::setBypass(bool bypassed) noexcept {
   targetBypass_.store(bypassed, std::memory_order_release);
   const auto targetWet = bypassed ? 0.0 : 1.0;
   if (rampSamples_ <= 1) {
@@ -126,7 +126,7 @@ void FreshAirProcessor::setBypass(bool bypassed) noexcept {
   }
 }
 
-void FreshAirProcessor::updateSmoothed(SmoothedValue& value, double next) noexcept {
+void FreshAeroProcessor::updateSmoothed(SmoothedValue& value, double next) noexcept {
   if (std::abs(next - value.target) < 1.0e-9) return;
   value.target = next;
   if (rampSamples_ <= 1) {
@@ -139,7 +139,7 @@ void FreshAirProcessor::updateSmoothed(SmoothedValue& value, double next) noexce
   }
 }
 
-double FreshAirProcessor::advance(SmoothedValue& value) noexcept {
+double FreshAeroProcessor::advance(SmoothedValue& value) noexcept {
   if (value.remaining > 0) {
     value.current += value.step;
     if (--value.remaining == 0) value.current = value.target;
@@ -147,7 +147,7 @@ double FreshAirProcessor::advance(SmoothedValue& value) noexcept {
   return value.current;
 }
 
-FreshAirProcessor::Coefficients FreshAirProcessor::presenceCoefficients(double amount) const noexcept {
+FreshAeroProcessor::Coefficients FreshAeroProcessor::presenceCoefficients(double amount) const noexcept {
   const auto curve = mapPresenceCurve(amount);
   const auto frequency = std::clamp(curve.frequencyHz, 10.0, sampleRate_ * 0.42);
   const auto a = std::pow(10.0, curve.gainDb / 40.0);
@@ -165,7 +165,7 @@ FreshAirProcessor::Coefficients FreshAirProcessor::presenceCoefficients(double a
   };
 }
 
-FreshAirProcessor::Coefficients FreshAirProcessor::airCoefficients(double amount) const noexcept {
+FreshAeroProcessor::Coefficients FreshAeroProcessor::airCoefficients(double amount) const noexcept {
   const auto curve = mapAirCurve(amount);
   const auto frequency = std::clamp(curve.frequencyHz, 10.0, sampleRate_ * 0.42);
   const auto a = std::pow(10.0, curve.gainDb / 40.0);
@@ -187,7 +187,7 @@ FreshAirProcessor::Coefficients FreshAirProcessor::airCoefficients(double amount
   };
 }
 
-double FreshAirProcessor::runFilter(double input, const Coefficients& coefficients,
+double FreshAeroProcessor::runFilter(double input, const Coefficients& coefficients,
     FilterState& state) noexcept {
   const auto output = coefficients.b0 * input + state.z1;
   state.z1 = sanitize(coefficients.b1 * input - coefficients.a1 * output + state.z2);
@@ -199,12 +199,12 @@ double FreshAirProcessor::runFilter(double input, const Coefficients& coefficien
   return sanitize(output);
 }
 
-double FreshAirProcessor::detectorCoefficient(double frequencyHz) const noexcept {
+double FreshAeroProcessor::detectorCoefficient(double frequencyHz) const noexcept {
   const auto freq = std::clamp(frequencyHz, 10.0, sampleRate_ * 0.45);
   return 1.0 - std::exp(-2.0 * std::numbers::pi * freq / sampleRate_);
 }
 
-double FreshAirProcessor::followEnvelope(double input, double& envelope,
+double FreshAeroProcessor::followEnvelope(double input, double& envelope,
     double attackSeconds, double releaseSeconds) const noexcept {
   const auto time = input > envelope ? attackSeconds : releaseSeconds;
   const auto coefficient = std::exp(-1.0 / (std::max(0.0001, time) * sampleRate_));
@@ -212,7 +212,7 @@ double FreshAirProcessor::followEnvelope(double input, double& envelope,
   return envelope;
 }
 
-void FreshAirProcessor::process(float* const* channels, std::size_t channelCount,
+void FreshAeroProcessor::process(float* const* channels, std::size_t channelCount,
     std::size_t sampleCount) noexcept {
   if (channels == nullptr || channelCount == 0 || sampleCount == 0) return;
   channelCount = std::min(channelCount, states_.size());

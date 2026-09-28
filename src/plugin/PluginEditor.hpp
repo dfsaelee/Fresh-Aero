@@ -6,10 +6,10 @@
 #include "plugin/AeroScene.h"
 #include "plugin/PluginProcessor.hpp"
 
-class G3XFreshAirEditor final : public juce::AudioProcessorEditor, private juce::Timer {
+class FreshAeroEditor final : public juce::AudioProcessorEditor, private juce::Timer {
 public:
-  explicit G3XFreshAirEditor(G3XFreshAirAudioProcessor&);
-  ~G3XFreshAirEditor() override;
+  explicit FreshAeroEditor(FreshAeroAudioProcessor&);
+  ~FreshAeroEditor() override;
 
   void paint(juce::Graphics&) override;
   void resized() override;
@@ -29,7 +29,7 @@ private:
   void drawMeter(juce::Graphics&) const;
   void recordPaintDuration(double elapsedMilliseconds);
 
-  G3XFreshAirAudioProcessor& processor_;
+  FreshAeroAudioProcessor& processor_;
   AeroLookAndFeel lookAndFeel_;
   aero::AeroScene scene_;
   juce::Slider presenceSlider_;

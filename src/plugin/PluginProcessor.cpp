@@ -5,7 +5,7 @@
 #include <array>
 #include <cmath>
 
-G3XFreshAirAudioProcessor::G3XFreshAirAudioProcessor()
+FreshAeroAudioProcessor::FreshAeroAudioProcessor()
   : AudioProcessor(BusesProperties()
       .withInput("Input", juce::AudioChannelSet::stereo(), true)
       .withOutput("Output", juce::AudioChannelSet::stereo(), true)),
@@ -18,7 +18,7 @@ G3XFreshAirAudioProcessor::G3XFreshAirAudioProcessor()
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout
-G3XFreshAirAudioProcessor::createParameterLayout() {
+FreshAeroAudioProcessor::createParameterLayout() {
   juce::AudioProcessorValueTreeState::ParameterLayout layout;
   layout.add(std::make_unique<juce::AudioParameterFloat>(
     juce::ParameterID{"presenceAmount", 1}, "Presence",
@@ -36,23 +36,23 @@ G3XFreshAirAudioProcessor::createParameterLayout() {
   return layout;
 }
 
-void G3XFreshAirAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {
+void FreshAeroAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {
   juce::ignoreUnused(samplesPerBlock);
   dsp_.prepare(sampleRate, static_cast<std::size_t>(std::max(1, getTotalNumOutputChannels())));
   updateParameters();
   clearClipIndicator();
 }
 
-void G3XFreshAirAudioProcessor::releaseResources() { dsp_.reset(); }
+void FreshAeroAudioProcessor::releaseResources() { dsp_.reset(); }
 
-bool G3XFreshAirAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const {
+bool FreshAeroAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const {
   const auto input = layouts.getMainInputChannelSet();
   const auto output = layouts.getMainOutputChannelSet();
   if (input != output) return false;
   return input == juce::AudioChannelSet::mono() || input == juce::AudioChannelSet::stereo();
 }
 
-void G3XFreshAirAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&) {
+void FreshAeroAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&) {
   juce::ScopedNoDenormals guard;
 
   const auto totalNumInputChannels = getTotalNumInputChannels();
@@ -74,7 +74,7 @@ void G3XFreshAirAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
   updateMeters(buffer);
 }
 
-void G3XFreshAirAudioProcessor::updateParameters() noexcept {
+void FreshAeroAudioProcessor::updateParameters() noexcept {
   if (presenceParam_ != nullptr)
     dsp_.setPresence(presenceParam_->load(std::memory_order_relaxed) / 100.0F);
   if (airParam_ != nullptr)
@@ -87,7 +87,7 @@ void G3XFreshAirAudioProcessor::updateParameters() noexcept {
     dsp_.setBypass(bypassParam_->load(std::memory_order_relaxed) >= 0.5F);
 }
 
-void G3XFreshAirAudioProcessor::updateMeters(const juce::AudioBuffer<float>& buffer) noexcept {
+void FreshAeroAudioProcessor::updateMeters(const juce::AudioBuffer<float>& buffer) noexcept {
   auto peak = 0.0F;
   double sumSquares = 0.0;
   for (int channel = 0; channel < buffer.getNumChannels(); ++channel) {
@@ -109,7 +109,7 @@ void G3XFreshAirAudioProcessor::updateMeters(const juce::AudioBuffer<float>& buf
   if (peak >= 1.0F) clipped_.store(true, std::memory_order_relaxed);
 }
 
-void G3XFreshAirAudioProcessor::setCurrentProgram(int index) {
+void FreshAeroAudioProcessor::setCurrentProgram(int index) {
   if (index < 0 || index >= static_cast<int>(kPresets.size())) return;
   currentProgram_ = index;
   const auto& p = kPresets[static_cast<std::size_t>(index)];
@@ -123,23 +123,23 @@ void G3XFreshAirAudioProcessor::setCurrentProgram(int index) {
     param->setValueNotifyingHost(param->convertTo0to1(p.linkBands ? 1.0F : 0.0F));
 }
 
-const juce::String G3XFreshAirAudioProcessor::getProgramName(int index) {
+const juce::String FreshAeroAudioProcessor::getProgramName(int index) {
   if (index >= 0 && index < static_cast<int>(kPresets.size()))
     return kPresets[static_cast<std::size_t>(index)].name;
   return {};
 }
 
-juce::AudioProcessorEditor* G3XFreshAirAudioProcessor::createEditor() {
-  return new G3XFreshAirEditor(*this);
+juce::AudioProcessorEditor* FreshAeroAudioProcessor::createEditor() {
+  return new FreshAeroEditor(*this);
 }
 
-void G3XFreshAirAudioProcessor::getStateInformation(juce::MemoryBlock& destination) {
+void FreshAeroAudioProcessor::getStateInformation(juce::MemoryBlock& destination) {
   auto stateCopy = state.copyState();
   stateCopy.setProperty("currentProgram", currentProgram_, nullptr);
   if (auto xml = stateCopy.createXml()) copyXmlToBinary(*xml, destination);
 }
 
-void G3XFreshAirAudioProcessor::setStateInformation(const void* data, int size) {
+void FreshAeroAudioProcessor::setStateInformation(const void* data, int size) {
   if (auto xml = getXmlFromBinary(data, size)) {
     auto vt = juce::ValueTree::fromXml(*xml);
     if (vt.isValid()) {
@@ -151,5 +151,5 @@ void G3XFreshAirAudioProcessor::setStateInformation(const void* data, int size) 
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter() {
-  return new G3XFreshAirAudioProcessor();
+  return new FreshAeroAudioProcessor();
 }

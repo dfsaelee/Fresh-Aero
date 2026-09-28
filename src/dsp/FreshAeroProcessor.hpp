@@ -20,15 +20,15 @@ struct AirCurve {
 [[nodiscard]] PresenceCurve mapPresenceCurve(double amount) noexcept;
 [[nodiscard]] AirCurve mapAirCurve(double amount) noexcept;
 
-class FreshAirProcessor {
+class FreshAeroProcessor {
 public:
-  FreshAirProcessor() = default;
-  ~FreshAirProcessor() = default;
+  FreshAeroProcessor() = default;
+  ~FreshAeroProcessor() = default;
 
-  FreshAirProcessor(const FreshAirProcessor&) = delete;
-  FreshAirProcessor& operator=(const FreshAirProcessor&) = delete;
-  FreshAirProcessor(FreshAirProcessor&&) noexcept = default;
-  FreshAirProcessor& operator=(FreshAirProcessor&&) noexcept = default;
+  FreshAeroProcessor(const FreshAeroProcessor&) = delete;
+  FreshAeroProcessor& operator=(const FreshAeroProcessor&) = delete;
+  FreshAeroProcessor(FreshAeroProcessor&&) noexcept = default;
+  FreshAeroProcessor& operator=(FreshAeroProcessor&&) noexcept = default;
 
   void prepare(double sampleRate, std::size_t channels, double rampSeconds = 0.02);
   void reset() noexcept;

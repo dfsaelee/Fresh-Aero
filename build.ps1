@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Unified build script for G3X Fresh Air VST3/Standalone plugin.
+    Unified build script for Fresh Aero VST3/Standalone plugin.
 #>
 [CmdletBinding()]
 param(
@@ -18,10 +18,10 @@ $root = $PSScriptRoot
 $toolsMingw = Join-Path $root "tools\mingw64\bin"
 $toolsCmake = Join-Path $root "tools\cmake\bin"
 $buildDir   = Join-Path $root "build"
-$vst3Bundle = Join-Path $buildDir "G3XFreshAir_artefacts\VST3\G3X Fresh Air.vst3"
-$vst3Binary = Join-Path $vst3Bundle "Contents\x86_64-win\G3X Fresh Air.vst3"
+$vst3Bundle = Join-Path $buildDir "FreshAero_artefacts\VST3\Fresh Aero.vst3"
+$vst3Binary = Join-Path $vst3Bundle "Contents\x86_64-win\Fresh Aero.vst3"
 $moduleInfo = Join-Path $vst3Bundle "Contents\Resources\moduleinfo.json"
-$standalone = Join-Path $buildDir "G3XFreshAir_artefacts\Standalone\G3X Fresh Air.exe"
+$standalone = Join-Path $buildDir "FreshAero_artefacts\Standalone\Fresh Aero.exe"
 
 function Write-Header([string]$text) {
     Write-Host ""
@@ -43,7 +43,7 @@ function Invoke-Build([string[]]$arguments) {
 }
 
 try {
-    Write-Header "G3X Fresh Air Build System"
+    Write-Header "Fresh Aero Build System"
 
     if (-not (Test-Path $toolsMingw)) {
         throw "MinGW toolchain not found at: $toolsMingw"
@@ -81,8 +81,8 @@ try {
     Write-Header "Building ($Target, Release, -j $Jobs)"
     $buildArgs = @('--build', $buildDir, '--config', 'Release', '-j', "$Jobs")
     switch ($Target) {
-        'VST3'       { $buildArgs += @('--target', 'G3XFreshAir_VST3') }
-        'Standalone' { $buildArgs += @('--target', 'G3XFreshAir_Standalone') }
+        'VST3'       { $buildArgs += @('--target', 'FreshAero_VST3') }
+        'Standalone' { $buildArgs += @('--target', 'FreshAero_Standalone') }
     }
     Invoke-Build $buildArgs
     Write-Host "  Build complete." -ForegroundColor Green

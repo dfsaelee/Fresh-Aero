@@ -76,7 +76,7 @@ endfunction()
 _g3x_patch_file(
   "${JUCE_SOURCE_DIR}/modules/juce_core/system/juce_TargetPlatform.h"
   "#error \"MinGW is not supported. Please use an alternative compiler.\""
-  "// MinGW support enabled by G3X Fresh Air build system"
+  "// MinGW support enabled by Fresh Aero build system"
 )
 
 # ===========================================================================
@@ -318,5 +318,5 @@ if(EXISTS "${_MSG_FILE}")
   endif()
 endif()
 
-file(WRITE "${_G3X_SENTINEL}" "Patched for MinGW by G3X Fresh Air build system\nTimestamp: ${CMAKE_CURRENT_LIST_FILE}\n")
+file(WRITE "${_G3X_SENTINEL}" "Patched for MinGW by Fresh Aero build system\nTimestamp: ${CMAKE_CURRENT_LIST_FILE}\n")
 message(STATUS "G3X: All JUCE MinGW patches applied successfully")
