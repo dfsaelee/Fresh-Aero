@@ -42,4 +42,5 @@ private:
   std::unique_ptr<ButtonAttachment> bypassAttachment_;
   float displayedPeak_{};
   float displayedRms_{};
+  bool isApplyingPreset_{false};
 };

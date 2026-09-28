@@ -99,10 +99,18 @@ G3XFreshAirEditor::G3XFreshAirEditor(G3XFreshAirAudioProcessor& processor)
   presetBox_.setDescription("Selects starting values for Presence, Air and output trim");
   for (std::size_t i = 0; i < kPresets.size(); ++i)
     presetBox_.addItem(kPresets[i].name, static_cast<int>(i + 1));
-  presetBox_.setTextWhenNothingSelected("PRESETS");
+  presetBox_.setTextWhenNothingSelected("Custom");
   presetBox_.setSelectedId(processor_.getCurrentProgram() + 1, juce::dontSendNotification);
   presetBox_.onChange = [this] { applyPreset(presetBox_.getSelectedId()); };
   addAndMakeVisible(presetBox_);
+
+  auto markCustom = [this] { 
+    if (!isApplyingPreset_) presetBox_.setSelectedId(0, juce::dontSendNotification); 
+  };
+  presenceSlider_.onValueChange = markCustom;
+  airSlider_.onValueChange = markCustom;
+  outputSlider_.onValueChange = markCustom;
+  linkButton_.onClick = markCustom;
 
   presenceAttachment_ = std::make_unique<SliderAttachment>(processor_.state,
     "presenceAmount", presenceSlider_);
@@ -202,10 +210,12 @@ void G3XFreshAirEditor::timerCallback() {
 
 void G3XFreshAirEditor::applyPreset(int presetId) {
   if (presetId < 1 || presetId > static_cast<int>(kPresets.size())) return;
+  isApplyingPreset_ = true;
   processor_.setCurrentProgram(presetId - 1);
   const auto& preset = kPresets[static_cast<std::size_t>(presetId - 1)];
-  presenceSlider_.setValue(preset.presence, juce::dontSendNotification);
-  airSlider_.setValue(preset.air, juce::dontSendNotification);
-  outputSlider_.setValue(preset.outputTrimDb, juce::dontSendNotification);
-  linkButton_.setToggleState(preset.linkBands, juce::dontSendNotification);
+  presenceSlider_.setValue(preset.presence, juce::sendNotificationSync);
+  airSlider_.setValue(preset.air, juce::sendNotificationSync);
+  outputSlider_.setValue(preset.outputTrimDb, juce::sendNotificationSync);
+  linkButton_.setToggleState(preset.linkBands, juce::sendNotificationSync);
+  isApplyingPreset_ = false;
 }
